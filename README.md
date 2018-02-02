@@ -71,3 +71,44 @@ getUser(): Observable<IUser> {
     });
 }
 ```
+
+I tested both setups (pure JS and `TestBed`, as above) with identical tests:
+
+```js
+it('should call ApiService with /user', () => {
+  const getSpy = spyOn(stubApiService, 'get')
+    .and.returnValue(Observable.of(stubUser));
+
+  service.getUser();
+
+  expect(getSpy).toHaveBeenCalledWith('/user');
+});
+
+it('should transform an ApiUser response to a User', () => {
+  spyOn(stubApiService, 'get')
+    .and.returnValue(Observable.of(stubUser));
+
+  const user$ = service.getUser();
+
+  user$.subscribe(user => {
+    expect(user.fullName).toEqual('Dame Test User');
+  });
+});
+```
+
+I copied these tests 50 times each to demonstrate to amount to 100 tests in each the pure JS setup and the `TestBed` setup.
+
+I found that the pure JS setup was about 10x faster than the `TestBed` setup, even with this very simple test case and sample size.
+
+```
+Pure JS: 0.05 secs
+TestBed: 0.495 secs
+```
+
+As projects grow and add tests and complexity, test slowdown can negatively impact productivity, and worse, disincentivize adding more tests.
+
+# Conclusion
+
+Since the outcome of setting up Angular services via `TestBed` or pure JS is the same, we should [default to the simplest option](https://en.wikipedia.org/wiki/KISS_principle).
+
+PS: Did you know you can do the same for Angular Components as well? For all your tests that don't need to assert on or manipulate the template/view or the component lifecycle, you can test the Component's methods and explicitily pass in mocked constructor dependencies.
